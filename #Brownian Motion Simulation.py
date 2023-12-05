@@ -60,6 +60,7 @@ class ball:
         return 0.5*self.m*(self.v[0]**2 + self.v[1]**2)
 class ensemble:
     balls = []
+    original = []
     def __init__(self):
         self.balls = []
     def findTemp(self):
@@ -68,6 +69,10 @@ class ensemble:
         for i in range(count):
             antonio = ball(random.randint(-10,10),random.randint(-10,10),10,10, random.randint(200,1200), random.randint(200,400))
             self.balls.append(antonio)
+        for i in range(count):
+            self.original.append(self.balls[i].pos)
+    def MSD(self):
+        return sum([distance(self.balls[i].pos, self.original[i]) **2 for i in range(len(self.balls))])/len(self.balls)
     def collisions(self):
         alrDone = set()
         for i in self.balls:
@@ -90,49 +95,54 @@ class ensemble:
         for i in self.balls:
             i.pos = [i.pos[0] + i.v[0], i.pos[1] + i.v[1]]
 
-pygame.init()
-screen = pygame.display.set_mode((1280, 720))
-clock = pygame.time.Clock()
-running = True
-joe = []
-Group = ensemble()
-Group.addBalls(200)
-points = []
+
 cnt = 0
-while running:
-    myFont = pygame.font.SysFont("Times New Roman", 18)
-    Disp = myFont.render(str(Group.findTemp()), True, 1)
-    cnt += 1
-    # poll for events
-    # pygame.QUIT event means the user clicked X to close your window
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+MeanMSD= 0
+for i in range(10):
+    pygame.init()
+    screen = pygame.display.set_mode((1280, 720))
+    clock = pygame.time.Clock()
+    running = True
+    joe = []
+    Group = ensemble()
+    Group.addBalls(200)
+    points = []
+    cnt = 0
+    while cnt < 1000 and running:
+        myFont = pygame.font.SysFont("Times New Roman", 18)
+        Disp = myFont.render(str(Group.findTemp()), True, 1)
+        cnt += 1
+        # poll for events
+        # pygame.QUIT event means the user clicked X to close your window
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("purple")
-    #handle collisons
-    
-    Group.collisions()
-    Group.advance()
-    atro = 0
-    for i in Group.drawDawg():
-        #print(i)
-        atro += 1
-        if(atro == 1):
-            pygame.draw.circle(screen, "red", i[:2], i[2])
-        else:
-            pygame.draw.circle(screen, "blue", i[:2], i[2])
-    if(len(points) > 2):
-        pygame.draw.lines(screen,"green", False,points, 15)
-    if(cnt > 100):
-        points.append(Group.balls[50].pos)
-    screen.blit(Disp,(520,30))
-    # flip() the display to put your work on screen
-    pygame.display.flip()
+        # fill the screen with a color to wipe away anything from last frame
+        screen.fill("purple")
+        #handle collisons
+        
+        Group.collisions()
+        Group.advance()
+        atro = 0
+        for i in Group.drawDawg():
+            #print(i)
+            atro += 1
+            if(atro == 1):
+                pygame.draw.circle(screen, "red", i[:2], i[2])
+            else:
+                pygame.draw.circle(screen, "blue", i[:2], i[2])
+        if(len(points) > 2):
+            pygame.draw.lines(screen,"green", False,points, 12)
+        if(cnt > 100):
+            points.append(Group.balls[0].pos)
+        screen.blit(Disp,(520,30))
+        # flip() the display to put your work on screen
+        pygame.display.flip()
 
-    # limits FPS to 60
-    # dt is delta time in seconds since last frame, used for framerate-
-    # independent physics.
-    dt = clock.tick(60) / 1000
-
+        # limits FPS to 60
+        # dt is delta time in seconds since last frame, used for framerate-
+        # independent physics.
+        dt = clock.tick(60) / 1000
+    MeanMSD += Group.MSD()
+print(MeanMSD/10)
