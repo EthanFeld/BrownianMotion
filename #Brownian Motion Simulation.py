@@ -3,19 +3,22 @@ import math
 import numpy
 import pygame
 import random
+import time
 inc = 0.1
 kb = 1.380649* 10 **-13
 distance = lambda p1, p2: ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) **0.5
-
+print("Start")
 class ball:
     #initialize
     def  __init__(self, vx, vy, m, r, posX, posY):
-        self.v = [vx * 10, vy * 10]
+        self.v = [vx , vy ]
         self.m = m
         self.r = r*1.1
         self.pos = [posX, posY]
         self.color = "red"
     #collide
+    def addVel(self):
+        self.v=[self.v[0]+ random.gauss(0,10)/20, self.v[1] + random.gauss(0,10)/20]
     def collide(self, ball2):
         dist = distance(ball2.pos, self.pos)
         dawg = ball2.r + self.r - dist 
@@ -86,6 +89,13 @@ class ensemble:
                 i.wallBounce()
             if(abs((i.pos[1] +i.r)- 360) >= 360 or i.pos[1] <=i.r):
                 i.ceilingBounce()
+    def randomCollision(self):
+        for i in self.balls:
+            i.addVel()
+            if(abs((i.pos[0] +i.r)- 640) >= 640 or i.pos[0] <=i.r):
+                i.wallBounce()
+            if(abs((i.pos[1] +i.r)- 360) >= 360 or i.pos[1] <=i.r):
+                i.ceilingBounce()
     def drawDawg(self):
         rtn =[]
         for i in self.balls:
@@ -96,9 +106,11 @@ class ensemble:
             i.pos = [i.pos[0] + i.v[0], i.pos[1] + i.v[1]]
 
 
+
 cnt = 0
 MeanMSD= 0
-for i in range(10):
+start_time1 = time.time()
+for i in range(5):
     pygame.init()
     screen = pygame.display.set_mode((1280, 720))
     clock = pygame.time.Clock()
@@ -108,7 +120,8 @@ for i in range(10):
     Group.addBalls(200)
     points = []
     cnt = 0
-    while cnt < 1000 and running:
+    
+    while cnt < 100 and running:
         myFont = pygame.font.SysFont("Times New Roman", 18)
         Disp = myFont.render(str(Group.findTemp()), True, 1)
         cnt += 1
@@ -119,12 +132,13 @@ for i in range(10):
                 running = False
 
         # fill the screen with a color to wipe away anything from last frame
-        screen.fill("purple")
+        screen.fill("black")
         #handle collisons
         
         Group.collisions()
         Group.advance()
         atro = 0
+        
         for i in Group.drawDawg():
             #print(i)
             atro += 1
@@ -133,16 +147,80 @@ for i in range(10):
             else:
                 pygame.draw.circle(screen, "blue", i[:2], i[2])
         if(len(points) > 2):
-            pygame.draw.lines(screen,"green", False,points, 12)
+            pygame.draw.lines(screen,"green", False,points, 0)
         if(cnt > 100):
             points.append(Group.balls[0].pos)
         screen.blit(Disp,(520,30))
         # flip() the display to put your work on screen
         pygame.display.flip()
+        
+        # limits FPS to 60
+        # dt is delta time in seconds since last frame, used for framerate-
+        # independent physics.
+        dt = clock.tick(60) / 1000
+runtime1 = time.time() - start_time1
+print("second")
+start_time2 = time.time()
+for i in range(5):
+    pygame.init()
+    screen = pygame.display.set_mode((1280, 720))
+    clock = pygame.time.Clock()
+    running = True
+    joe = []
+    Group = ensemble()
+    Group.addBalls(200)
+    points = []
+    cnt = 0
+    
+    while cnt < 100 and running:
+        #myFont = pygame.font.SysFont("Times New Roman", 18)
+        #Disp = myFont.render(str(Group.findTemp()), True, 1)
+        cnt += 1
+        # poll for events
+        # pygame.QUIT event means the user clicked X to close your window
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
+        # fill the screen with a color to wipe away anything from last frame
+        screen.fill("grey")
+        #handle collisons
+        
+        Group.randomCollision()
+        Group.advance()
+        atro = 0
+        
+        for i in Group.drawDawg():
+            #print(i)
+            atro += 1
+            if(atro == 1):
+                pygame.draw.circle(screen, "red", i[:2], i[2])
+            else:
+                pygame.draw.circle(screen, "blue", i[:2], i[2])
+        if(len(points) > 2):
+            pygame.draw.lines(screen,"green", False,points, 0)
+        if(cnt > 100):
+            points.append(Group.balls[0].pos)
+        screen.blit(Disp,(520,30))
+        # flip() the display to put your work on screen
+        pygame.display.flip()
+        
         # limits FPS to 60
         # dt is delta time in seconds since last frame, used for framerate-
         # independent physics.
         dt = clock.tick(60) / 1000
     MeanMSD += Group.MSD()
-print(MeanMSD/10)
+runtime2 = time.time() - start_time2
+import matplotlib.pyplot as plt
+
+
+programs = ['Classical', 'Statistical']
+runtimes = [runtime1, runtime2]
+
+
+plt.bar(programs, runtimes, color=['blue', 'green'])
+plt.xlabel('Programs')
+plt.ylabel('Runtime (seconds)')
+plt.title('Comparison of Runtimes')
+plt.show()
+
